@@ -1,0 +1,96 @@
+customer_id,age,country,plan_type,signup_date,last_login,monthly_charges,total_charges,viewing_hours,devices_connected,payment_method,churn
+GS001,28,USA,Premium,2023-01-15,2024-01-10,14.99,179.88,45.5,3,Credit Card,0
+GS002,35,UK,Basic,2022-11-20,2024-01-12,9.99,119.88,12.3,1,PayPal,0
+GS003,42,Canada,Premium,2023-03-10,2023-12-05,14.99,134.91,8.7,2,Bank Transfer,1
+GS004,31,Australia,Standard,2023-06-22,2024-01-14,12.49,74.94,32.1,4,Credit Card,0
+GS005,29,USA,Basic,2022-09-05,2023-11-20,9.99,149.85,5.2,1,PayPal,1
+
+
+"""
+Sample Data Generator for Demonstration
+Creates realistic customer data for analysis
+"""
+
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import random
+
+def generate_sample_customer_data(n_customers=5000):
+    """Generate realistic sample customer data for churn analysis"""
+    
+    np.random.seed(42)
+    random.seed(42)
+    
+    data = []
+    
+    for i in range(n_customers):
+        customer_id = f"GS{str(i+1).zfill(4)}"
+        age = np.random.randint(18, 70)
+        country = random.choice(['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France'])
+        plan_type = random.choice(['Basic', 'Standard', 'Premium'])
+        
+        # Signup date (within last 2 years)
+        signup_date = datetime.now() - timedelta(days=np.random.randint(1, 730))
+        
+        # Last login (some customers inactive)
+        days_since_login = np.random.randint(1, 180)
+        last_login = datetime.now() - timedelta(days=days_since_login)
+        
+        # Monthly charges based on plan
+        plan_prices = {'Basic': 9.99, 'Standard': 12.49, 'Premium': 14.99}
+        monthly_charges = plan_prices[plan_type]
+        
+        # Total charges (based on tenure)
+        tenure_days = (datetime.now() - signup_date).days
+        total_charges = monthly_charges * (tenure_days / 30)
+        
+        # Viewing hours (some customers are low usage)
+        viewing_hours = np.random.gamma(shape=2, scale=15)
+        
+        # Devices connected
+        devices_connected = np.random.randint(1, 6)
+        
+        # Payment method
+        payment_method = random.choice(['Credit Card', 'PayPal', 'Bank Transfer', 'Digital Wallet'])
+        
+        # Churn probability based on behavior
+        churn_prob = 0.15  # Base probability
+        
+        # Increase churn probability for certain patterns
+        if viewing_hours < 10:
+            churn_prob += 0.25
+        if monthly_charges > 12 and viewing_hours < 15:
+            churn_prob += 0.30
+        if days_since_login > 90:
+            churn_prob += 0.20
+        if tenure_days < 60:
+            churn_prob += 0.15
+            
+        churn = 1 if random.random() < churn_prob else 0
+        
+        data.append({
+            'customer_id': customer_id,
+            'age': age,
+            'country': country,
+            'plan_type': plan_type,
+            'signup_date': signup_date,
+            'last_login': last_login,
+            'monthly_charges': monthly_charges,
+            'total_charges': round(total_charges, 2),
+            'viewing_hours': round(viewing_hours, 1),
+            'devices_connected': devices_connected,
+            'payment_method': payment_method,
+            'churn': churn
+        })
+    
+    df = pd.DataFrame(data)
+    return df
+
+# Generate and save sample data
+if __name__ == "__main__":
+    print("Generating sample customer data...")
+    sample_data = generate_sample_customer_data(5000)
+    sample_data.to_csv('data/raw/customer_data.csv', index=False)
+    print(f"✅ Sample data generated: {len(sample_data)} customers")
+    print(f"📊 Churn rate: {sample_data['churn'].mean():.1%}")
